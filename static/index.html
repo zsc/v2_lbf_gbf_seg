@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coupled LBF+GBF Level Set Segmentation Demo</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="panel">
+        <h1>Level Set 分割 Demo</h1>
+
+        <div class="group">
+          <label>上传图片</label>
+          <input id="file" type="file" accept="image/*" />
+          <small class="hint">未选择文件时默认使用内置 `test.png`；后端会转灰度并缩放到最长边 ≤ 512</small>
+        </div>
+
+        <div class="group">
+          <label>模型</label>
+          <select id="model">
+            <option value="lbf">LBF（局部）</option>
+            <option value="gbf">GBF（全局）</option>
+            <option value="coupled" selected>Coupled（局部+全局）</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label>初始化</label>
+          <select id="initType">
+            <option value="otsu" selected>Otsu（自动，推荐）</option>
+            <option value="circle">居中圆</option>
+            <option value="rect">矩形框</option>
+          </select>
+          <div class="row">
+            <label class="inline">圆半径比例</label>
+            <input id="radiusFrac" type="number" min="0.05" max="0.48" step="0.01" value="0.25" />
+          </div>
+          <div class="row">
+            <label class="inline">矩形边距比例</label>
+            <input id="rectMarginFrac" type="number" min="0.02" max="0.45" step="0.01" value="0.20" />
+          </div>
+        </div>
+
+        <div class="group">
+          <label>参数</label>
+          <div class="row">
+            <label class="inline">device</label>
+            <select id="device">
+              <option value="auto" selected>auto（优先 MPS）</option>
+              <option value="mps">mps</option>
+              <option value="cpu">cpu</option>
+            </select>
+          </div>
+          <div class="grid">
+            <div class="field">
+              <span>sigma</span>
+              <input id="sigma" type="number" min="0.5" max="10" step="0.1" value="3.0" />
+            </div>
+            <div class="field">
+              <span>ksize(可选)</span>
+              <input id="ksize" type="number" min="0" max="99" step="1" value="0" />
+            </div>
+            <div class="field">
+              <span>epsilon</span>
+              <input id="epsilon" type="number" min="0.5" max="5" step="0.1" value="1.5" />
+            </div>
+            <div class="field">
+              <span>nu</span>
+              <input id="nu" type="number" min="0" max="5" step="0.01" value="0.3" />
+            </div>
+            <div class="field">
+              <span>mu</span>
+              <input id="mu" type="number" min="0" max="2" step="0.01" value="0.3" />
+            </div>
+            <div class="field">
+              <span>omega</span>
+              <input id="omega" type="number" min="0" max="10" step="0.1" value="1.0" />
+            </div>
+            <div class="field">
+              <span>dt</span>
+              <input id="dt" type="number" min="0.01" max="5" step="0.01" value="0.1" />
+            </div>
+            <div class="field">
+              <span>iters</span>
+              <input id="iters" type="number" min="1" max="500" step="1" value="120" />
+            </div>
+            <div class="field">
+              <span>viz_stride</span>
+              <input id="vizStride" type="number" min="1" max="50" step="1" value="5" />
+            </div>
+          </div>
+          <small class="hint">提示：如果发散/NaN，先减小 dt 或增大 epsilon。</small>
+        </div>
+
+        <div class="group">
+          <button id="runBtn">Run</button>
+          <div class="row">
+            <button id="loadCliBtn" class="secondary">Load CLI Run</button>
+          </div>
+          <div id="status" class="status"></div>
+        </div>
+
+        <div class="group">
+          <label>播放</label>
+          <div class="row">
+            <button id="playBtn" class="secondary">Play</button>
+            <button id="pauseBtn" class="secondary">Pause</button>
+          </div>
+          <input id="frameSlider" type="range" min="0" max="0" value="0" />
+          <div class="meta">
+            <div>iter: <span id="iterLabel">-</span></div>
+            <div>c1: <span id="c1Label">-</span> / c2: <span id="c2Label">-</span></div>
+            <div>energy: <span id="energyLabel">-</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="viz">
+        <section class="card">
+          <header>Overlay（原图 + 轮廓）</header>
+          <canvas id="overlayCanvas"></canvas>
+        </section>
+        <section class="card">
+          <header>Mask</header>
+          <canvas id="maskCanvas"></canvas>
+        </section>
+        <section class="card">
+          <header>f1 / f2（可选）</header>
+          <div class="row">
+            <img id="f1Img" alt="f1" />
+            <img id="f2Img" alt="f2" />
+          </div>
+        </section>
+        <section class="card">
+          <header>Energy</header>
+          <canvas id="energyCanvas" height="140"></canvas>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
